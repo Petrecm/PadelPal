@@ -1,145 +1,162 @@
-# PadelPal – **The Smart Padel Court Booking & Coaching Platform**
+# PadelPal – The Smart Padel Court Booking & Coaching Platform | Milestone 2
 
 ---
 
 ## Team Members
-- Petrec Matei-Teodor
-- Bontas Andrian-Cosmin
+- Petrec Matei-Teodor  
+- Bontaș Andrian-Cosmin  
 
 ---
 
 ## Project Description
-PadelPal is a modern, implementable **Padel Court Booking and Coaching Management System** designed to bring digital innovation to club operations.  
-The platform offers **real-time scheduling, dynamic pricing, membership management, and IoT integration** for lighting and access control.
+PadelPal is a modular platform for managing padel clubs, integrating booking, coaching, and maintenance functionalities.  
+This milestone focuses on the system’s design and proof-of-concept implementation, emphasizing **clean architecture** and the use of key design patterns:  
+Factory, Strategy, State, Facade, Decorator, Observer, and Command.  
 
-PadelPal supports multiple **user roles** → *Players*, *Members*, *Coaches*, *Managers*, and *Maintenance Staff* — each with distinct privileges and workflows.  
-The system ensures efficient court utilization, accurate billing, and seamless coordination between players and club staff.
-
-PadelPal promotes **scalability**, **maintainability**, and **extensibility**, enabling future integrations such as AI-based training recommendations, wearable analytics, or predictive court maintenance.
+The goal is to showcase a maintainable and extensible architecture where each pattern contributes to flexibility, reusability, and cohesion.
 
 ---
 
-## Core Modules & Features
+## Project Structure and Layers
 
-### **1. User Categories & Responsibilities**
-- **Player:** Book courts, join or host matches, split payments, and view match history.  
-- **Member:** Enjoy discounted rates, early booking access, and loyalty rewards.  
-- **Coach:** Organize training sessions, manage participants, record progress, and provide digital feedback.  
-- **Club Manager:** Configure pricing rules, oversee booking schedules, approve refunds, and monitor financial reports.  
-- **Maintenance Crew:** Receive *auto-generated alerts* for cleaning or repair tasks; update court availability.  
-- **Administrator:** Full system access for CRUD operations on users, courts, and pricing models; manage role permissions.
+### 1. Court & Pricing Management (Factory + Strategy)
+Defines the creation and pricing logic for different padel court types. Each court’s cost dynamically adapts based on contextual factors such as peak hours, membership, or weather.
 
----
+**Key Components:**
+- CourtFactory — creates court objects (`IndoorCourt`, `OutdoorCourt`, `PremiumCourt`).  
+- Pricing Strategies (`IPricingStrategy`):  
+  - `BasePricing` – standard fixed rate.  
+  - `PeakHourStrategy` – optional dynamic pricing during high demand.  
+  - `MemberDiscountStrategy` – applies loyalty discounts.  
+  - `WeatherStrategy` – discounts outdoor courts in poor weather.
 
-### **2. Court & Schedule Management**
-- Courts include **metadata** such as *surface type, location, indoor/outdoor flag, lighting system,* and *availability status.*  
-- Dynamic **calendar view** displaying real-time bookings and maintenance windows.  
-- **Double-booking prevention** via transactional locks.  
-- **IoT Integration:** automatic light and door activation during reserved time slots.  
-- Maintenance thresholds trigger alerts when courts exceed configured usage hours.
+**Example Rates:**
 
----
+| Court Type | Rate (lei/hour) |
+|-------------|----------------|
+| IndoorCourt | 80 |
+| OutdoorCourt | 60 |
+| PremiumCourt | 100 |
 
-### **3. Booking Lifecycle & Match Workflow**
-- **Lifecycle:** *Requested* ➜ *Confirmed* ➜ *In-Progress* ➜ *Completed* ➜ *Cancelled*.  
-- **Validation:** prevents overlapping or expired reservations.  
-- **Cancellation Policies:** configured per club; refund eligibility validated automatically.  
-- **Split Payments:** participants can share booking costs dynamically.  
-- **Matchmaking:** suggests opponents or partners based on skill level and time preference.  
-- **Coaching Sessions:** booked directly through coach schedules with linked courts.
+**Example Usage:**
+```java
+Court court = new CourtFactory().createCourt("PremiumCourt");
+PricingStrategy pricing = new BasePricing();
+if (settings.isPeakHourEnabled()) pricing = new PeakHourStrategy(pricing);
+double finalPrice = pricing.calculatePrice(court, time);
+```
 
----
-
-### **4. Dynamic Pricing & Membership Plans**
-**Pricing Strategies (Strategy Pattern):**
-- `PeakHourStrategy` → adjusts cost during high-demand hours.  
-- `MemberDiscountStrategy` → applies tier-based discounts.  
-- `WeatherStrategy` → modifies price for outdoor courts during adverse conditions.  
-- `EventStrategy` → special pricing during tournaments or club events.
-
-**Advantages:**  
-- Eliminates complex conditional logic.  
-- Enables new rules without modifying core code.  
-- Encourages **Open/Closed Principle** compliance.
+**Purpose:** Combines Factory and Strategy to make court management flexible, configurable, and reusable.
 
 ---
 
-### **5. Coaching & Performance Tracking**
-- Coaches define **structured sessions**: skill level, duration, capacity, and recurrence.  
-- Participants receive **automated reminders** and feedback summaries post-session.  
-- Historical performance stored per player for progress analysis.  
-- *Observer Pattern* notifies analytics modules upon session completion.  
-- Optional integration with wearables (e.g., smartwatch data).
+### 2. Booking Workflow (State + Facade)
+Manages reservation creation, confirmation, and progression through defined lifecycle states, while exposing a simple interface for end users.
+
+**Key Components:**
+- Booking — core entity linking players, courts, and payments.  
+- BookingState Interface — defines valid transitions.  
+- States: `Requested`, `Confirmed`, `InProgress`, `Completed`, `Cancelled`.  
+- BookingFacade — central interface for actions like `create`, `confirm`, and `cancel`.
+
+**Example Usage:**
+```java
+Booking booking = bookingFacade.createBooking(player, court);
+bookingFacade.confirmBooking(booking);
+bookingFacade.cancelBooking(booking);
+```
+
+**Purpose:** Combines State and Facade to maintain valid booking transitions and simplify user operations.
 
 ---
 
-### **6. Notification & Event System**
-**Event Flow (Observer Pattern):**
-- **BookingConfirmedEvent:** notifies players, updates court status, triggers IoT lighting.  
-- **SessionEndedEvent:** sends feedback forms, updates attendance logs.  
-- **CourtMaintenanceEvent:** alerts maintenance team, blocks court availability.  
-- **PaymentCompletedEvent:** sends invoices and confirmation messages.
+### 3. Coaching System (Decorator + Facade)
+Allows coaches to design flexible training sessions and attach additional features such as recording or equipment rental.
 
-**Benefits:**  
-- *Loose coupling* between modules.  
-- Simple addition of new event subscribers (CRM, analytics, IoT).  
-- Promotes asynchronous and scalable workflows.
+**Key Components:**
+- TrainingSessionComponent — abstract session type.  
+- TrainingSession — core implementation.  
+- Decorators:  
+  - `VideoRecordingDecorator` – records sessions.  
+  - `EquipmentRentalDecorator` – includes equipment in booking.  
+- CoachFacade — manages scheduling and reporting.
 
----
+**Example Usage:**
+```java
+TrainingSessionComponent session = coachFacade.createSession(coach, players);
+session = new VideoRecordingDecorator(new EquipmentRentalDecorator(session));
+session.startTraining();
+```
 
-### **7. Analytics & Reporting Dashboard**
-- Visual dashboards for **occupancy, revenue, and player activity.**  
-- Track **court utilization by hour/day** and membership tier usage.  
-- Evaluate **coach performance** and session popularity.  
-- Exportable **CSV/PDF reports** for management review.  
-- Integrates with external BI tools (optional future milestone).
-
----
-
-## Design Patterns & Justifications
-
-1. **Strategy Pattern**  
-   - **Problem:** Pricing varies dynamically by context (member type, time, event).  
-   - **Solution:** Define `PricingStrategy` interface with concrete implementations for each scenario.  
-   - **Justification:** Enables flexible, modular pricing without rewriting core booking logic.  
-   - **Advantage:** Easy to extend, improves maintainability, aligns with SOLID principles.
-
-2. **State Pattern**  
-   - **Problem:** Bookings transition between multiple stages, each requiring unique behavior.  
-   - **Solution:** Implement separate `BookingState` classes (`RequestedState`, `ConfirmedState`, etc.).  
-   - **Justification:** Avoids messy conditional statements, ensures valid transitions only.  
-   - **Advantage:** Clear, debuggable lifecycle; simplifies rollback or undo operations.
-
-3. **Command Pattern**  
-   - **Problem:** Critical actions (booking, cancel, refund) require audit logging, retries, and potential undo.  
-   - **Solution:** Encapsulate actions as `Command` objects executed by a `CommandHandler`.  
-   - **Justification:** Centralizes business logic, supports transaction safety.  
-   - **Advantage:** Improves traceability and enables asynchronous command processing.
-
-4. **Observer Pattern**  
-   - **Problem:** Multiple services (notifications, IoT, analytics) must react to domain events.  
-   - **Solution:** Use event dispatchers and observers to handle asynchronous updates.  
-   - **Justification:** Promotes modular, event-driven design; no hard dependencies.  
-   - **Advantage:** High scalability, easy integration of new reactive modules.
-
-5. **Facade Pattern**  
-   - **Problem:** Different roles (coach, player, staff) interact with distinct subsystems.  
-   - **Solution:** Create dedicated facades: `CoachFacade`, `PlayerFacade`, `MaintenanceFacade`.  
-   - **Justification:** Simplifies user operations and hides internal system complexity.  
-   - **Advantage:** Enhances usability, security, and separation of concerns.
+**Purpose:** Combines Decorator and Facade for modular, extensible training management.
 
 ---
 
-## Expected Benefits
-- **Realism:** Mirrors true padel club workflows — bookings, memberships, coaching, and maintenance.  
-- **Extensibility:** Add new pricing models, user roles, or IoT devices easily.  
-- **Maintainability:** Each pattern isolates logic for simplified future development.  
-- **Scalability:** Supports multiple clubs, large user bases, and event-driven concurrency.  
-- **Reliability:** State machine guarantees booking integrity; event system ensures synchronization.
+### 4. Event System (Observer)
+Coordinates communication between system modules (notifications, IoT, analytics) through asynchronous event updates.
+
+**Key Components:**
+- PadelEventPublisher — dispatches system events.  
+- Observers:  
+  - NotificationService — sends messages to players.  
+  - IoTService — handles lighting and access gates.  
+  - AnalyticsService — updates performance dashboards.
+
+**Example Flow:**
+```java
+PadelEventPublisher publisher = new PadelEventPublisher();
+publisher.addObserver(new NotificationService());
+publisher.addObserver(new IoTService());
+publisher.notifyObservers("Court 3 booking confirmed");
+```
+
+**Purpose:** Uses Observer to decouple services, ensuring smooth updates across independent subsystems.
 
 ---
 
-## Conclusion
-PadelPal provides a **robust, extensible, and realistic** solution for managing padel club operations.  
-Through the use of **Strategy**, **State**, **Command**, **Observer**, and **Facade** patterns, the system achieves modularity, maintainability, and professional-grade scalability.  
-It demonstrates practical application of software engineering principles, ready for both **academic evaluation** and **real-world adaptation.**
+### 5. Command Layer (Command Pattern)
+Centralizes all high-level user operations — such as booking creation and cancellation — into executable commands.  
+This ensures a clear execution flow, logging, and the ability to extend functionality without altering existing code.
+
+**Key Components:**
+- Command Interface — defines an executable action (`execute()`).  
+- Concrete Commands:  
+  - `CreateBookingCommand` – initializes and registers a booking.  
+  - `CancelBookingCommand` – cancels and logs refunds or updates.  
+- CommandBus — processes commands sequentially and records them for auditing.
+
+**Example Usage:**
+```java
+CommandBus bus = new CommandBus();
+bus.execute(new CreateBookingCommand(bookingService, bookingData));
+bus.execute(new CancelBookingCommand(bookingService, bookingData));
+```
+
+**Purpose:** Implements Command to centralize and trace critical operations, enhancing maintainability and control.
+
+---
+
+## Design Patterns Demonstrated
+
+1. **Factory** — `CourtFactory` creates different court types with preset configurations.  
+2. **Strategy** — `IPricingStrategy` allows flexible and extensible pricing calculation.  
+3. **State** — controls the booking lifecycle (Requested → Confirmed → InProgress → Completed → Cancelled).  
+4. **Decorator** — enables dynamic add-ons such as `VideoRecordingDecorator` and `EquipmentRentalDecorator`.  
+5. **Facade** — simplifies interactions with subsystems like booking, coaching, and payments.  
+6. **Observer** — triggers asynchronous updates across notification, IoT, and analytics services.  
+7. **Command** — encapsulates major user actions like booking creation or cancellation.
+
+---
+
+## Milestone 2 Scope
+
+- Implemented **court and pricing logic** using Factory and Strategy patterns.  
+- Implemented **booking lifecycle management** using the State pattern.  
+- Implemented **facades** for booking and coaching operations.  
+- Implemented **decorator-based add-ons** for training session customization.  
+- Implemented **observer pattern** for notifications and automated IoT updates.  
+- Implemented **command layer** to execute and log booking-related operations.  
+- Delivered a **proof-of-concept demonstration** for cost calculation, booking creation, and event-driven updates.
+
+---
+
