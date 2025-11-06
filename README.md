@@ -24,11 +24,12 @@ Defines the creation and pricing logic for different padel court types. Each cou
 
 **Key Components:**
 - CourtFactory — creates court objects (`IndoorCourt`, `OutdoorCourt`, `PremiumCourt`).  
-- Pricing Strategies (`IPricingStrategy`):  
+- Pricing Strategies (`PricingStrategy`):  
   - `BasePricing` – standard fixed rate.  
   - `PeakHourStrategy` – optional dynamic pricing during high demand.  
   - `MemberDiscountStrategy` – applies loyalty discounts.  
-  - `WeatherStrategy` – discounts outdoor courts in poor weather.
+  - `WeatherStrategy` – discounts outdoor courts in poor weather.  
+  - `EventStrategy` – adds surcharges for special events.
 
 **Example Rates:**
 
@@ -40,10 +41,18 @@ Defines the creation and pricing logic for different padel court types. Each cou
 
 **Example Usage:**
 ```java
-Court court = new CourtFactory().createCourt("PremiumCourt");
-PricingStrategy pricing = new BasePricing();
-if (settings.isPeakHourEnabled()) pricing = new PeakHourStrategy(pricing);
-double finalPrice = pricing.calculatePrice(court, time);
+Court court = new CourtFactory().create("Premium");
+PricingStrategy pricing = new EventStrategy(
+    new WeatherStrategy(
+        new PeakHourStrategy(
+            new MemberDiscountStrategy(
+                new BasePricing()
+            )
+        )
+    )
+);
+double finalPrice = pricing.calculatePrice(court, 2);
+System.out.println("Final price: " + finalPrice + " lei");
 ```
 
 **Purpose:** Combines Factory and Strategy to make court management flexible, configurable, and reusable.
@@ -57,13 +66,15 @@ Manages reservation creation, confirmation, and progression through defined life
 - Booking — core entity linking players, courts, and payments.  
 - BookingState Interface — defines valid transitions.  
 - States: `Requested`, `Confirmed`, `InProgress`, `Completed`, `Cancelled`.  
-- BookingFacade — central interface for actions like `create`, `confirm`, and `cancel`.
+- BookingFacade — central interface for actions like `createAndPrice`, `confirmBooking`, and `cancelBooking`.
 
 **Example Usage:**
 ```java
-Booking booking = bookingFacade.createBooking(player, court);
-bookingFacade.confirmBooking(booking);
-bookingFacade.cancelBooking(booking);
+BookingFacade bookingFacade = new BookingFacade(new CourtFactory(), pricing, new EventPublisher());
+var booking = bookingFacade.createAndPrice("Premium", "B-2001", 2, true);
+System.out.println(booking);
+booking.confirm();
+booking.complete();
 ```
 
 **Purpose:** Combines State and Facade to maintain valid booking transitions and simplify user operations.
@@ -83,9 +94,10 @@ Allows coaches to design flexible training sessions and attach additional featur
 
 **Example Usage:**
 ```java
-TrainingSessionComponent session = coachFacade.createSession(coach, players);
-session = new VideoRecordingDecorator(new EquipmentRentalDecorator(session));
-session.startTraining();
+CoachFacade coachFacade = new CoachFacade();
+var session = coachFacade.buildSession("Coach Alex", 90, true, true);
+System.out.println(session.description());
+System.out.println("Cost: " + session.cost() + " lei");
 ```
 
 **Purpose:** Combines Decorator and Facade for modular, extensible training management.
@@ -96,18 +108,20 @@ session.startTraining();
 Coordinates communication between system modules (notifications, IoT, analytics) through asynchronous event updates.
 
 **Key Components:**
-- PadelEventPublisher — dispatches system events.  
+- EventPublisher — dispatches system events.  
 - Observers:  
+  - BillingService — issues invoices automatically.  
   - NotificationService — sends messages to players.  
   - IoTService — handles lighting and access gates.  
   - AnalyticsService — updates performance dashboards.
 
 **Example Flow:**
 ```java
-PadelEventPublisher publisher = new PadelEventPublisher();
-publisher.addObserver(new NotificationService());
-publisher.addObserver(new IoTService());
-publisher.notifyObservers("Court 3 booking confirmed");
+EventPublisher publisher = new EventPublisher();
+publisher.register(new NotificationService());
+publisher.register(new IoTService());
+publisher.register(new AnalyticsService());
+publisher.publish("Booking B-2001 completed");
 ```
 
 **Purpose:** Uses Observer to decouple services, ensuring smooth updates across independent subsystems.
@@ -128,8 +142,8 @@ This ensures a clear execution flow, logging, and the ability to extend function
 **Example Usage:**
 ```java
 CommandBus bus = new CommandBus();
-bus.execute(new CreateBookingCommand(bookingService, bookingData));
-bus.execute(new CancelBookingCommand(bookingService, bookingData));
+bus.execute(new CreateBookingCommand(booking));
+bus.execute(new CancelBookingCommand(booking));
 ```
 
 **Purpose:** Implements Command to centralize and trace critical operations, enhancing maintainability and control.
@@ -139,10 +153,10 @@ bus.execute(new CancelBookingCommand(bookingService, bookingData));
 ## Design Patterns Demonstrated
 
 1. **Factory** — `CourtFactory` creates different court types with preset configurations.  
-2. **Strategy** — `IPricingStrategy` allows flexible and extensible pricing calculation.  
+2. **Strategy** — `PricingStrategy` allows flexible and extensible pricing calculation.  
 3. **State** — controls the booking lifecycle (Requested → Confirmed → InProgress → Completed → Cancelled).  
 4. **Decorator** — enables dynamic add-ons such as `VideoRecordingDecorator` and `EquipmentRentalDecorator`.  
-5. **Facade** — simplifies interactions with subsystems like booking, coaching, and payments.  
+5. **Facade** — simplifies interactions with subsystems like booking, coaching, and pricing.  
 6. **Observer** — triggers asynchronous updates across notification, IoT, and analytics services.  
 7. **Command** — encapsulates major user actions like booking creation or cancellation.
 
@@ -159,4 +173,3 @@ bus.execute(new CancelBookingCommand(bookingService, bookingData));
 - Delivered a **proof-of-concept demonstration** for cost calculation, booking creation, and event-driven updates.
 
 ---
-
