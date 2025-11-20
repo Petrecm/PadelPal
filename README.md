@@ -23,10 +23,10 @@ The monolithic version of **PadelPal** bundles all platform functionality—book
 ### B. Diagrams
 
 #### Component Diagram
-![Monolithic Component Diagram](monolithic_component.png)
+![Monolithic Component Diagram](Diagrams/monolithic_component.png)
 
 #### Deployment Diagram
-![Monolithic Deployment Diagram](monolithic_deployment.png)
+![Monolithic Deployment Diagram](Diagrams/monolithic_deployment.png)
 
 ### C. Pros and Cons
 
@@ -63,10 +63,10 @@ An **API Gateway** sits in front of these services, acting as the single entry p
 ### B. Diagrams
 
 #### Component Diagram
-![Microservices Component Diagram](microservices_component.png)
+![Microservices Component Diagram](Diagrams/microservices_component.png)
 
 #### Deployment Diagram
-![Microservices Deployment Diagram](microservices_deployment.png)
+![Microservices Deployment Diagram](Diagrams/microservices_deployment.png)
 
 ### C. Pros and Cons
 
@@ -102,10 +102,10 @@ Typical event flow for a completed booking:
 ### B. Diagrams
 
 #### Component Diagram
-![EDA Component Diagram](eventdriven_component.png)
+![EDA Component Diagram](Diagrams/eventdriven_component.png)
 
 #### Deployment Diagram
-![EDA Deployment Diagram](eventdriven_deployment.png)
+![EDA Deployment Diagram](Diagrams/eventdriven_deployment.png)
 
 ### C. Pros and Cons
 
