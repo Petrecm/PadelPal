@@ -1,0 +1,134 @@
+{
+  "info": {
+    "_postman_id": "padelpal-m4-final",
+    "name": "PadelPal Final Submission",
+    "description": "Complete test suite for PadelPal microservices: User, Court, and Booking. Includes CRUD-style operations, inter-service validation, and negative booking cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. User Service",
+      "description": "Endpoints for creating and retrieving users. Must be called before booking to have a valid userId.",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Matei Test\",\n  \"email\": \"matei@example.com\"\n}"
+            },
+            "url": "http://localhost:8081/api/users"
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8081/api/users"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8081/api/users/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Court Service",
+      "description": "Endpoints for creating and retrieving padel courts. Must be called before booking to have a valid courtId.",
+      "item": [
+        {
+          "name": "Create Court",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Central Court\",\n  \"location\": \"Bucharest\",\n  \"indoor\": true\n}"
+            },
+            "url": "http://localhost:8082/api/courts"
+          }
+        },
+        {
+          "name": "Get All Courts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8082/api/courts"
+          }
+        },
+        {
+          "name": "Get Court by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8082/api/courts/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Booking Service (End-to-End Logic)",
+      "description": "Booking flow that checks User Service and Court Service before creating bookings, plus edge cases for invalid IDs.",
+      "item": [
+        {
+          "name": "Create Booking (Valid: userId=1, courtId=1)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "http://localhost:8083/api/bookings?userId=1&courtId=1"
+          }
+        },
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8083/api/bookings"
+          }
+        },
+        {
+          "name": "Get Bookings by User (userId=1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:8083/api/bookings/user/1"
+          }
+        },
+        {
+          "name": "Create Booking - Invalid User (userId=999, courtId=1)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "http://localhost:8083/api/bookings?userId=999&courtId=1"
+          }
+        },
+        {
+          "name": "Create Booking - Invalid Court (userId=1, courtId=999)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "http://localhost:8083/api/bookings?userId=1&courtId=999"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  user-service:
+    build: ./user-service/user-service
+    container_name: user-service
+    ports:
+      - "8081:8081"
+
+  court-service:
+    build: ./court-service/court-service
+    container_name: court-service
+    ports:
+      - "8082:8082"
+
+  booking-service:
+    build: ./booking-service/booking-service
+    container_name: booking-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - user-service
+      - court-service
