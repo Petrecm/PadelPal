@@ -75,8 +75,9 @@ Started CourtServiceApplication
 Started BookingServiceApplication
 ```
 
-Insert Docker Desktop screenshot here:  
-`docker-running.png`
+
+![docker-running](./docker-running.png)
+
 
 ---
 
